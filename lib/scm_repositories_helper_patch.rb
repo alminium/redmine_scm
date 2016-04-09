@@ -50,14 +50,17 @@ module ScmRepositoriesHelperPatch
         def subversion_field_tags_with_add(form, repository)
             svntags = subversion_field_tags_without_add(form, repository)
             svntags.gsub!('&lt;br /&gt;', '<br />')
-
             if repository.new_record? && SubversionCreator.enabled? && !limit_exceeded
                 if defined? observe_field # Rails 3.0 and below
                     add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
                 else # Rails 3.1 and above
                     add = submit_tag(l(:button_create_new_repository), :onclick => "$('#repository_operation').val('add');")
                 end
-                svntags.sub!('<br />', ' ' + add + '<br />')
+                if svntags.include?('<br />')
+                    svntags.sub!('<br />', ' ' + add + '<br />')
+                else
+                    svntags.sub!('</p>', ' ' + add + '</p>')
+                end
                 svntags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = SubversionCreator.access_root_url(SubversionCreator.default_path(@project.identifier), repository)
